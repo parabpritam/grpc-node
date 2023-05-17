@@ -20,7 +20,6 @@ uname -a
 cd "$(dirname "$0")"
 base=$(pwd)
 protobuf_base=$base/deps/protobuf
-
 tools_version=$(jq '.version' <package.json | tr -d '"')
 
 # Note: artifacts should not be output in the package directory
@@ -29,23 +28,17 @@ mkdir -p "$out_dir"
 
 build() {
   cmake_flag=$*
-
   rm -rf "$base/build/bin"
   rm -f "$base/CMakeCache.txt"
   rm -rf "$base/CMakeFiles"
   rm -f "$protobuf_base/CMakeCache.txt"
   rm -rf "$protobuf_base/CMakeFiles"
-
   cmake -DCMAKE_TOOLCHAIN_FILE=linux.toolchain.cmake $cmake_flag . && cmake --build . --target clean && cmake --build . -- -j 12
-
   mkdir -p "$base/build/bin"
-
   cp -L "$protobuf_base/protoc" "$base/build/bin/protoc"
   cp "$base/grpc_node_plugin" "$base/build/bin/"
-
   file "$base/build/bin"/*
 }
-
 artifacts() {
   platform=$1
   arch=$2
@@ -55,11 +48,10 @@ artifacts() {
     tar -czf "$out_dir/$platform-$arch.tar.gz" -C "$(dirname "$dir")" "$(basename "$dir")"
     ;;
   Darwin)
-    tar --format=gnutar -czf "$out_dir/$platform-$arch.tar.gz" -C "$(dirname "$dir")" "$(basename "$dir")"
+    tar -czf "$out_dir/$platform-$arch.tar.gz" -C "$(dirname "$dir")" "$(basename "$dir")"
     ;;
   esac
 }
-
 case $(uname -s) in
 Linux)
   build -DGRPC_TOOLS_TARGET=i686
@@ -68,17 +60,12 @@ Linux)
   artifacts linux x64 "$base/build/bin"
   build -DGRPC_TOOLS_TARGET=aarch64
   artifacts linux arm64 "$base/build/bin"
+  build -DGRPC_TOOLS_TARGET=s390x
+  artifacts linux s390x "$base/build/bin"
   ;;
 Darwin)
   build -DGRPC_TOOLS_TARGET=x86_64 -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
-
-  for arch in "x64" "arm64"; do
-    mkdir "$base/build/bin/$arch"
-    for bin in protoc grpc_node_plugin; do
-      lipo -extract x86_64 "$base/build/bin/$bin" -o "$base/build/bin/$arch/$bin"
-      otool -l "$base/build/bin/$arch/$bin" | grep minos
-    done
-    artifacts darwin $arch "$base/build/bin/$arch/"
-  done
+  artifacts darwin x64 "$base/build/bin"
+  artifacts darwin arm64 "$base/build/bin"
   ;;
 esac
