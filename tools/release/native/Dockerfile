@@ -15,9 +15,16 @@ RUN apt-get install -y cmake curl build-essential \
     gcc-x86-64-linux-gnu g++-x86-64-linux-gnu binutils \
     gcc-aarch64-linux-gnu g++-aarch64-linux-gnu make \
     gcc g++ gzip bash libc6-amd64-i386-cross \
-    libc6-dev-amd64-i386-cross
+    libc6-dev-amd64-i386-cross\
+    gcc-s390x-linux-gnu g++-s390x-linux-gnu \
+    libc6-dev-s390x-cross
 
 RUN mkdir /usr/local/nvm
+
 ENV NVM_DIR /usr/local/nvm
+ENV CC_s390x_linux_gnu /usr/bin/s390x-linux-gnu-gcc
+ENV CXX_s390x_linux_gnu /usr/bin/s390x-linux-gnu-g++
+
+ENV PATH "$NVM_DIR:$PATH"
 
 RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash
